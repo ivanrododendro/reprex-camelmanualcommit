@@ -19,8 +19,13 @@ public class KafkaProducer {
 
 	public void send(String topic, String payload) {
 		LOGGER.info("sending payload='{}' to topic='{}'", payload, topic);
-		Message<String> message = MessageBuilder.withPayload(payload).setHeader(KafkaHeaders.TOPIC, topic)
-				.setHeader("publisherId", "pub-1").build();
+		// @formatter:off
+		Message<String> message = MessageBuilder.withPayload(payload)
+				.setHeader(KafkaHeaders.TOPIC, topic)
+				.setHeader("publisherId", "pub-1")
+				.setHeader("dmlTimestamp", String.valueOf(System.currentTimeMillis()))
+				.build();
+		// @formatter:on
 
 		kafkaTemplate.send(message);
 	}

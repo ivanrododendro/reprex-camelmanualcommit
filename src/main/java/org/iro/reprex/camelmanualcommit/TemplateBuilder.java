@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TemplateBuilder extends RouteBuilder {
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(RouteBuilder.class);
 
 	private String topic;
@@ -46,36 +47,42 @@ public class TemplateBuilder extends RouteBuilder {
 			.templateParameter("publisherId")
 			.from(endpoint)
 			.messageHistory()
-			 .onCompletion().onFailureOnly()
+			 	.onCompletion().onFailureOnly()
 		        .to("log:sync")
 		    .end()
-			.onCompletion().onCompleteOnly()
-	        .process(new Processor() {
-				@Override
-				public void process(Exchange exchange) throws Exception {
-					String routeId = exchange.getFromRouteId();
-					KafkaManualCommit manual = exchange.getIn().getHeader(KafkaConstants.MANUAL_COMMIT, KafkaManualCommit.class);
-					manual.commit();
-					log.info("Committed Kafka offset from route [{}]", routeId);
-					commitLatch.countDown();
-				}
-			})
+				.onCompletion().onCompleteOnly()
+		        .process(new KafkaOffsetProcessor())
 	        .end()
 			.log("Message received")
 			.filter(simple("${header.publisherId} == '{{publisherId}}'"))
-			.process(new Processor() {
-				@Override
-				public void process(Exchange exchange) throws Exception {
-					String routeId = exchange.getFromRouteId();
-					LOGGER.info("Processing message from route [{}]", routeId);
-				}
-			})
+			.process(new BusinessProcessor())
 			.throttle(1).timePeriodMillis(1000).asyncDelayed(true)
 			.setHeader(Exchange.HTTP_METHOD, simple("POST"))
 			.setHeader("Content-type", constant("application/json;charset=UTF-8"))
 			.setHeader("Accept",constant("application/json"))
+			.resequence(header("dmlTimestamp")).batch().timeout(100)
 			.to("http://localhost:" + httpServerPort + "/echo-post");
 		// @formatter:on
+	}
+
+	private final class KafkaOffsetProcessor implements Processor {
+		@Override
+		public void process(Exchange exchange) throws Exception {
+			String routeId = exchange.getFromRouteId();
+			KafkaManualCommit manual = exchange.getIn().getHeader(KafkaConstants.MANUAL_COMMIT,
+					KafkaManualCommit.class);
+			manual.commit();
+			log.info("Committed Kafka offset from route [{}]", routeId);
+			commitLatch.countDown();
+		}
+	}
+
+	private final class BusinessProcessor implements Processor {
+		@Override
+		public void process(Exchange exchange) throws Exception {
+			String routeId = exchange.getFromRouteId();
+			LOGGER.info("Processing message from route [{}]", routeId);
+		}
 	}
 
 }
