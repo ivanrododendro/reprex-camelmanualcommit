@@ -4,6 +4,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -16,6 +19,9 @@ public class KafkaProducer {
 
 	public void send(String topic, String payload) {
 		LOGGER.info("sending payload='{}' to topic='{}'", payload, topic);
-		kafkaTemplate.send(topic, payload);
+		Message<String> message = MessageBuilder.withPayload(payload).setHeader(KafkaHeaders.TOPIC, topic)
+				.setHeader("publisherId", "pub-1").build();
+
+		kafkaTemplate.send(message);
 	}
 }
