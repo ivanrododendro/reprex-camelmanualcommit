@@ -22,8 +22,8 @@ public class KafkaProducer {
 		// @formatter:off
 		Message<String> message = MessageBuilder.withPayload(payload)
 				.setHeader(KafkaHeaders.TOPIC, topic)
-				.setHeader("publisherId", "pub-1")
-				.setHeader("dmlTimestamp", String.valueOf(System.currentTimeMillis()))
+				.setHeader(Constants.TEMPLATE_PARAM_PUBLISHER_ID, "pub-1")
+				.setHeader(Constants.DML_TIMESTAMP_HEADER, String.valueOf(System.currentTimeMillis()))
 				.build();
 		// @formatter:on
 

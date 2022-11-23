@@ -70,10 +70,19 @@ public class KafkaTestContainersLiveTest {
 
 		templateBuilder = new TemplateBuilder(topic, kafka.getBootstrapServers(), serverPort);
 		camelContext.addRoutes(templateBuilder);
-		TemplatedRouteBuilder.builder(camelContext, "template-1").parameter("publisherId", "pub-1").routeId("route-1")
-				.add();
-		TemplatedRouteBuilder.builder(camelContext, "template-1").parameter("publisherId", "pub-2").routeId("route-2")
-				.add();
+		// @formatter:off
+		TemplatedRouteBuilder
+			.builder(camelContext, Constants.TEMPLATE_ID)
+			.parameter(Constants.TEMPLATE_PARAM_PUBLISHER_ID, "pub-1")
+			.routeId("route-1")
+			.add();
+		TemplatedRouteBuilder
+			.builder(camelContext, Constants.TEMPLATE_ID)
+			.parameter(Constants.TEMPLATE_PARAM_PUBLISHER_ID, "pub-2")
+			.routeId("route-2")
+			.add();
+		// @formatter:on
+
 		camelContext.start();
 	}
 

@@ -43,8 +43,8 @@ public class TemplateBuilder extends RouteBuilder {
 				+ bootstrapServers;
 
 		// @formatter:off
-		routeTemplate("template-1")
-			.templateParameter("publisherId")
+		routeTemplate(Constants.TEMPLATE_ID)
+			.templateParameter(Constants.TEMPLATE_PARAM_PUBLISHER_ID)
 			.from(endpoint)
 			.messageHistory()
 			 	.onCompletion().onFailureOnly()
@@ -54,13 +54,13 @@ public class TemplateBuilder extends RouteBuilder {
 		        .process(new KafkaOffsetProcessor())
 	        .end()
 			.log("Message received")
-			.filter(simple("${header.publisherId} == '{{publisherId}}'"))
+			.filter(simple("${header.publisherId} == '{{"+Constants.TEMPLATE_PARAM_PUBLISHER_ID+"}}'"))
 			.process(new BusinessProcessor())
 			.throttle(1).timePeriodMillis(1000).asyncDelayed(true)
 			.setHeader(Exchange.HTTP_METHOD, simple("POST"))
 			.setHeader("Content-type", constant("application/json;charset=UTF-8"))
 			.setHeader("Accept",constant("application/json"))
-			.resequence(header("dmlTimestamp")).batch().timeout(100)
+			.resequence(header(Constants.DML_TIMESTAMP_HEADER)).batch().timeout(100)
 			.to("http://localhost:" + httpServerPort + "/echo-post");
 		// @formatter:on
 	}
